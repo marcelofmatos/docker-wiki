@@ -1,0 +1,56 @@
+# Wiki stack
+#
+# Env:
+# WEBSERVER_FQDN
+
+version: '3.8'
+
+services:
+  server:
+    image: marcelofmatos/mediawiki:1.27
+    restart: always
+    volumes:
+      - www:/var/www/mediawiki
+    networks:
+      - default
+      - web
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+         constraints:
+         - node.role == worker
+      labels:
+        - traefik.enable=true
+        - traefik.port=80
+        - traefik.frontend.rule=Host:${WEBSERVER_FQDN}
+        - traefik.protocol=http
+        - traefik.docker.network=web
+      
+  database:
+    image: mariadb:10.3
+    environment:
+      MYSQL_DATABASE: wiki
+      MYSQL_USER: wiki
+      MYSQL_PASSWORD: LogzdM4hsKO2U
+      MYSQL_ROOT_PASSWORD: nt6NyDWS0txFw
+    volumes:
+      - mysql-data:/var/lib/mysql
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+         constraints:
+         - node.role == worker
+      
+networks:
+  web: # proxy net
+    external: true
+    name: web
+
+
+volumes:
+  www:
+    driver: local
+  mysql-data:
+    driver: local
